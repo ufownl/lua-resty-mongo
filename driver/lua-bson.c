@@ -358,11 +358,11 @@ append_one(struct bson *bs, lua_State *L, const char *key, size_t sz, int depth)
                               bs->size += len-2;
                               break;
                             case BSON_DATE: {
-                                              if (len != 2+4) {
+                                              if (len != 2+8) {
                                                 luaL_error(L, "Invalid date");
                                               }
-                                              const uint32_t * ts = (const uint32_t *)(str + 2);
-                                              int64_t v = (int64_t)*ts * 1000;
+                                              const double * ts = (const double *)(str + 2);
+                                              int64_t v = (int64_t)(*ts * 1000);
                                               write_int64(bs, v);
                                               break;
                                             }
@@ -660,8 +660,8 @@ unpack_dict(lua_State *L, struct bson_reader *br, bool array) {
                         break;
       case BSON_DATE: {
                         int64_t date = read_int64(L, &t);
-                        uint32_t v = date / 1000;
-                        make_object(L, BSON_DATE, &v, 4);
+                        double v = (double)date / 1000;
+                        make_object(L, BSON_DATE, &v, sizeof(v));
                         break;
                       }
       case BSON_MINKEY:
@@ -838,11 +838,11 @@ replace_object(lua_State *L, int type, struct bson * bs) {
       memcpy(bs->ptr, data+2, 12);
       break;
     case BSON_DATE: {
-                      if (len != 2+4) {
+                      if (len != 2+8) {
                         luaL_error(L, "Invalid date");
                       }
-                      const uint32_t * ts = (const uint32_t *)(data + 2);
-                      int64_t v = (int64_t)*ts * 1000;
+                      const double* ts = (const double*)(data + 2);
+                      int64_t v = (int64_t)(*ts * 1000);
                       write_int64(bs, v);
                       break;
                     }
@@ -1011,7 +1011,7 @@ lencode_order(lua_State *L) {
 
 static int
 ldate(lua_State *L) {
-  int d = luaL_checkinteger(L,1);
+  double d = luaL_checknumber(L,1);
   luaL_Buffer b;
   luaL_buffinit(L, &b);
   luaL_addchar(&b, 0);
@@ -1118,12 +1118,12 @@ lsubtype(lua_State *L, int subtype, const uint8_t * buf, size_t sz) {
                           return 2;
                         }
     case BSON_DATE: {
-                      if (sz != 4) {
+                      if (sz != 8) {
                         return luaL_error(L, "Invalid date");
                       }
-                      int d = *(const int *)buf;
+                      double d = *(const double*)buf;
                       lua_pushvalue(L, lua_upvalueindex(9));
-                      lua_pushinteger(L, d);
+                      lua_pushnumber(L, d);
                       return 2;
                     }
     case BSON_TIMESTAMP: {

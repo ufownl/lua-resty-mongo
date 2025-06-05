@@ -256,6 +256,24 @@ op_msg(lua_State *L) {
   return 1;
 }
 
+// xor digest of HMAC SHA1
+#define HMAC_SHA1_DIGLEN 20
+static int
+lxor_dig(lua_State *L) {
+  size_t len1, len2;
+  const char *s1 = luaL_checklstring(L, 1, &len1);
+  const char *s2 = luaL_checklstring(L, 2, &len2);
+  if (len1 != HMAC_SHA1_DIGLEN || len2 != HMAC_SHA1_DIGLEN) {
+    return luaL_error(L, "Length of HMAC SHA1 digest MUST be %d", HMAC_SHA1_DIGLEN);
+  }
+  char buf[HMAC_SHA1_DIGLEN];
+  for (int i = 0; i < HMAC_SHA1_DIGLEN; ++i) {
+    buf[i] = s1[i] ^ s2[i];
+  }
+  lua_pushlstring(L, buf, HMAC_SHA1_DIGLEN);
+  return 1;
+}
+
 
 int
 luaopen_mongo(lua_State *L) {
@@ -263,6 +281,7 @@ luaopen_mongo(lua_State *L) {
     { "reply", unpack_reply }, // 接收响应
     { "length", reply_length },
     { "op_msg", op_msg},
+    { "xor_dig", lxor_dig},
     { NULL, NULL },
   };
 

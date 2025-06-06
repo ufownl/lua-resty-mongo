@@ -570,7 +570,7 @@ function mongo_collection:findOne(query, projection)
   local r = self.database:runCommand("find", self.name, "filter", query and bson_encode(query) or empty_bson,
     "limit", 1, "projection", projection and bson_encode(projection) or empty_bson)
   if r.ok ~= 1 then
-    error(r.errmsg or "Reply from mongod error")
+    return nil, r.errmsg or "Reply from mongod error"
   end
   return r.cursor.firstBatch[1]
 end

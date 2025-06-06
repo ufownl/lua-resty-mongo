@@ -131,12 +131,6 @@ local function mongo_auth(mongoc)
   end
 
   return function()
-    if user  ~= nil and pass  ~= nil then
-      -- authmod can be "mongodb_cr" or "scram_sha1"
-      local auth_func = auth_method[authmod]
-      assert(auth_func , "Invalid authmod")
-      assert(auth_func(authdb or mongoc, user, pass))
-    end
     local rs_data =  mongoc:runCommand("ismaster")
     if rs_data.ok == 1 then
       if rs_data.hosts then
@@ -148,7 +142,12 @@ local function mongo_auth(mongoc)
         mongoc.__sock:changebackup(backup)
       end
       if rs_data.ismaster  then
-        return
+        if user  ~= nil and pass  ~= nil then
+          -- authmod can be "mongodb_cr" or "scram_sha1"
+          local auth_func = auth_method[authmod]
+          assert(auth_func , "Invalid authmod")
+          assert(auth_func(authdb or mongoc, user, pass))
+        end
       elseif rs_data.primary then
         local host,  port = __parse_addr(rs_data.primary)
         mongoc.host  = host

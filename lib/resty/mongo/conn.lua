@@ -78,12 +78,12 @@ function _MT.__index.connect(self)
 end
 
 function _MT.__index.close(self)
-	if not self.__closed then
-		self.__closed = true
+  if not self.__closed then
+    self.__closed = true
     local sock = self.sock
     self.sock = nil
     sock:setkeepalive()
-	end
+  end
 end
 
 function _MT.__index.request(self, request, rid)
@@ -132,11 +132,11 @@ function _M.new(options)
     error("host of mongo connection MUST be a string.")
   end
   return setmetatable({
-		host = options.host,
-		port = tonumber(options.port) or 27017,
-		backup = options.backup,
-		auth_cb = options.auth,
-		resp_cb = options.response,
+    host = options.host,
+    port = tonumber(options.port) or 27017,
+    backup = options.backup,
+    auth_cb = options.auth,
+    resp_cb = options.response,
     socket_opts = options.socket_opts,
     closed = true
   }, _MT)

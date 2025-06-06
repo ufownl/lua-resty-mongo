@@ -131,32 +131,30 @@ local function mongo_auth(mongoc)
   end
 
   return function()
-    local rs_data =  mongoc:runCommand("ismaster")
-    if rs_data.ok == 1 then
-      if rs_data.hosts then
-        local backup = {}
-        for  _, v in  ipairs(rs_data.hosts) do
-          local host,  port = __parse_addr(v)
-          table.insert(backup, {host = host, port  = port})
-        end
-        mongoc.__sock:changebackup(backup)
+    local ok, err, rs_data = assert(werror(mongoc:runCommand("ismaster")))
+    if rs_data.hosts then
+      local backup = {}
+      for  _, v in ipairs(rs_data.hosts) do
+        local host,  port = __parse_addr(v)
+        table.insert(backup, {host = host, port = port})
       end
-      if rs_data.ismaster  then
-        if user  ~= nil and pass  ~= nil then
-          -- authmod can be "mongodb_cr" or "scram_sha1"
-          local auth_func = auth_method[authmod]
-          assert(auth_func , "Invalid authmod")
-          assert(auth_func(authdb or mongoc, user, pass))
-        end
-      elseif rs_data.primary then
-        local host,  port = __parse_addr(rs_data.primary)
-        mongoc.host  = host
-        mongoc.port  = port
-        mongoc.__sock:changehost(host, port)
-      else
-        -- socketchannel would try the next host in backup list
-        error ("No primary return : " .. tostring(rs_data.me))
+      mongoc.__sock:changebackup(backup)
+    end
+    if rs_data.ismaster  then
+      if user  ~= nil and pass  ~= nil then
+        -- authmod can be "mongodb_cr" or "scram_sha1"
+        local auth_func = auth_method[authmod]
+        assert(auth_func , "Invalid authmod")
+        assert(auth_func(authdb or mongoc, user, pass))
       end
+    elseif rs_data.primary then
+      local host,  port = __parse_addr(rs_data.primary)
+      mongoc.host  = host
+      mongoc.port  = port
+      mongoc.__sock:changehost(host, port)
+    else
+      -- socketchannel would try the next host in backup list
+      error ("No primary return : " .. tostring(rs_data.me))
     end
   end
 end
